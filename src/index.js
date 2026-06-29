@@ -58,11 +58,7 @@ export default {
 
     // Guild ID Guard
     if (interaction.guild_id !== env.ALLOWED_GUILD_ID) {
-      ctx.waitUntil(logEvent(env, {
-        name: 'guild_rejected',
-        guildId: interaction.guild_id,
-        userId: getUserId(interaction)
-      }));
+      
       return new Response(JSON.stringify({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
@@ -90,13 +86,7 @@ export default {
         try {
           repo = resolveRepo(interaction.guild_id, interaction.channel_id, env.CHANNEL_REPO_MAP_JSON);
         } catch (err) {
-          ctx.waitUntil(logEvent(env, {
-            name: 'repo_not_mapped',
-            guildId: interaction.guild_id,
-            channelId: interaction.channel_id,
-            userId: getUserId(interaction),
-            text
-          }));
+          
           return new Response(JSON.stringify({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
@@ -196,6 +186,23 @@ async function editOriginalInteraction(applicationId, token, payload) {
   }
 }
 
+async function sendMessageToChannel(channelId, env, payload) {
+  const url = `https://discord.com/api/v10/channels/${channelId}/messages`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    console.error(
+      `Failed to send message to channel: ${res.status} ${await res.text()}`
+    );
+  }
+}
+
 async function sendFollowupInteraction(applicationId, token, payload) {
   const url = `https://discord.com/api/v10/webhooks/${applicationId}/${token}`;
   const res = await fetch(url, {
@@ -248,28 +255,7 @@ async function ensureLabels(env, repo, desiredLabels) {
   }
 }
 
-async function logEvent(env, event) {
-  if (!env.LOG_WEBHOOK_URL) return;
-  try {
-    const timestamp = new Date().toISOString();
-    const content = `[${event.name.toUpperCase()}] at ${timestamp}\n` +
-      `- User: ${event.userId || 'N/A'}\n` +
-      `- Guild: ${event.guildId || 'N/A'}\n` +
-      `- Channel: ${event.channelId || 'N/A'}\n` +
-      (event.repo ? `- Repo: ${event.repo}\n` : '') +
-      (event.text ? `- Input note: ${event.text}\n` : '') +
-      (event.issueUrl ? `- Issue URL: ${event.issueUrl}\n` : '') +
-      (event.status ? `- Status/Error: ${event.status}\n` : '');
 
-    await fetch(env.LOG_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content })
-    });
-  } catch (err) {
-    console.error('Failed to log event to webhook', err);
-  }
-}
 
 async function processAddIssue(interaction, env, repo, text) {
   const userId = getUserId(interaction);
@@ -380,14 +366,7 @@ Rules:
     });
   } catch (err) {
     console.error('Normalization error', err);
-    await logEvent(env, {
-      name: 'openai_normalize_failed',
-      guildId: interaction.guild_id,
-      channelId: interaction.channel_id,
-      userId: userId,
-      text,
-      status: err.message
-    });
+    
     await editOriginalInteraction(interaction.application_id, interaction.token, {
       content: 'Không thể chuẩn hóa nội dung issue. Vui lòng mô tả rõ hơn.',
       components: []
@@ -426,13 +405,7 @@ async function processComponent(interaction, env) {
       content: 'Đã hủy tạo issue.',
       components: []
     });
-    await logEvent(env, {
-      name: 'issue_cancelled',
-      guildId: pending.guildId,
-      channelId: pending.channelId,
-      userId: pending.userId,
-      repo: pending.repo
-    });
+    
     return;
   }
 
@@ -468,19 +441,63 @@ async function processComponent(interaction, env) {
 
       await env.PENDING_ISSUES.delete(`pending:${targetId}`);
 
-      await editOriginalInteraction(interaction.application_id, interaction.token, {
-        content: `Đã tạo issue: ${issueData.html_url}`,
-        components: []
-      });
+            await editOriginalInteraction(interaction.application_id, interaction.token, {
+              content: `Đã tạo issue: ${issueData.html_url}`,
+              components: []
+            });
+      
+            // Gửi message mới hoàn toàn về channel báo hoàn thành
+            await sendMessageToChannel(
+              pending.channelId,
+              env,
+              {
+                embeds: [
+                  {
+                    title: `[Issue] ${issueData.title}`,
+                    url: issueData.html_url,
+                    color: 0x0b5f9b,
+                    author: {
+                      name: issueData.user.login,
+                      icon_url: issueData.user.avatar_url,
+                      url: issueData.user.html_url
+                    },
+                    fields: [
+                      {
+                        name: "Trạng thái",
+                        value: issueData.state,
+                        inline: true
+                      },
+                      {
+                        name: "Nhãn (Labels)",
+                        value: issueData.labels && issueData.labels.length > 0 ? issueData.labels.map(l => l.name).join(", ") : "Không có",
+                        inline: true
+                      }
+                    ],
+                    footer: {
+                      text: "GitHub Tracker",
+                      icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                    },
+                    timestamp: new Date().toISOString()
+                  }
+                ],
+                components: [
+                  {
+                    type: 1, // Action Row
+                    components: [
+                      {
+                        type: 2, // Button
+                        style: 5, // Style 5 là Link Button
+                        label: "Xem Issue trên GitHub",
+                        url: issueData.html_url
+                      }
+                    ]
+                  }
+                ],
+                flags: 0
+              }
+            );
 
-      await logEvent(env, {
-        name: 'issue_created',
-        guildId: pending.guildId,
-        channelId: pending.channelId,
-        userId: pending.userId,
-        repo: pending.repo,
-        issueUrl: issueData.html_url
-      });
+      
     } catch (err) {
       console.error('GitHub issue creation failed', err);
       // Clean up KV on terminal failures as specified
@@ -491,14 +508,7 @@ async function processComponent(interaction, env) {
         components: []
       });
 
-      await logEvent(env, {
-        name: 'issue_creation_failed',
-        guildId: pending.guildId,
-        channelId: pending.channelId,
-        userId: pending.userId,
-        repo: pending.repo,
-        status: err.message
-      });
+      
     }
   }
 }
