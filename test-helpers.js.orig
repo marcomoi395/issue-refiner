@@ -56,9 +56,29 @@ console.log('normalizeLabels passed');
 
 // 4. parseOpenAIResponse
 const responseWithOutputText = {
-  choices: [{ message: { content: '{"title": "Bug fix 2", "labels": ["bug"], "body": "fix stuff 2"}' } }]
+  output_text: '{"title": "Bug fix", "labels": ["bug"], "body": "fix stuff"}'
 };
 assert.deepStrictEqual(parseOpenAIResponse(responseWithOutputText), {
+  title: 'Bug fix',
+  labels: ['bug'],
+  body: 'fix stuff'
+});
+
+const responseWithContent = {
+  output: [
+    {
+      content: [
+        {
+          type: 'text',
+          text: {
+            value: '{"title": "Bug fix 2", "labels": ["bug"], "body": "fix stuff 2"}'
+          }
+        }
+      ]
+    }
+  ]
+};
+assert.deepStrictEqual(parseOpenAIResponse(responseWithContent), {
   title: 'Bug fix 2',
   labels: ['bug'],
   body: 'fix stuff 2'

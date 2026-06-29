@@ -9,7 +9,8 @@
     "deploy:dry": "wrangler deploy --dry-run",
     "types": "wrangler types",
     "verify": "npm run deploy:dry",
-    "test": "node test-helpers.js && node test-integration.js"
+    "test": "node test-helpers.js && node test-integration.js",
+    "register-commands": "node register-commands.js"
   },
   "dependencies": {
     "discord-interactions": "^4.0.0"

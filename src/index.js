@@ -175,20 +175,7 @@ export function parseOpenAIResponse(data) {
   if (data.error) {
     throw new Error(`OpenAI error: ${JSON.stringify(data.error)}`);
   }
-  let text = data.output_text;
-  if (!text && data.output && Array.isArray(data.output)) {
-    for (const out of data.output) {
-      if (out.content && Array.isArray(out.content)) {
-        for (const item of out.content) {
-          if (item.type === 'text' && item.text && item.text.value) {
-            text = item.text.value;
-            break;
-          }
-        }
-      }
-      if (text) break;
-    }
-  }
+  let text = data.choices?.[0]?.message?.content;
   if (!text) {
     throw new Error("No parseable text in OpenAI response");
   }
@@ -323,28 +310,28 @@ Rules:
       }
     };
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: env.OPENAI_MODEL,
-        input: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "github_issue",
-            strict: true,
-            schema: schema
-          }
-        }
-      })
-    });
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: env.OPENAI_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "github_issue",
+                strict: true,
+                schema: schema
+              }
+            }
+          })
+        });
 
     if (!response.ok) {
       throw new Error(`OpenAI API failed: ${response.status} ${await response.text()}`);
