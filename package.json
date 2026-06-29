@@ -2,12 +2,17 @@
   "name": "issue-refiner",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:dry": "wrangler deploy --dry-run",
     "types": "wrangler types",
-    "verify": "npm run deploy:dry"
+    "verify": "npm run deploy:dry",
+    "test": "node test-helpers.js && node test-integration.js"
+  },
+  "dependencies": {
+    "discord-interactions": "^4.0.0"
   },
   "devDependencies": {
     "wrangler": "4.97.0"

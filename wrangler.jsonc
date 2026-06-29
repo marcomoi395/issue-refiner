@@ -4,6 +4,17 @@
   "main": "src/index.js",
   "compatibility_date": "2026-06-29",
   "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "PENDING_ISSUES",
+      "id": "<KV_NAMESPACE_ID>"
+    }
+  ],
+  "vars": {
+    "ALLOWED_GUILD_ID": "<DISCORD_GUILD_ID>",
+    "CHANNEL_REPO_MAP_JSON": "{\"guilds\":{\"<DISCORD_GUILD_ID>\":{\"channels\":{\"<CHANNEL_ID>\":\"owner/repo\"}}}}",
+    "OPENAI_MODEL": "gpt-5.5"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
