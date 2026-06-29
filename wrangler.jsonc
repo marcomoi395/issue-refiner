@@ -7,11 +7,16 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "48a76ced34eb4732bb5a9477e43dc3db",
-    },
+      "id": "48a76ced34eb4732bb5a9477e43dc3db"
+    }
   ],
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1,
+    "head_sampling_rate": 1
   },
+  "vars": {
+    "ALLOWED_GUILD_ID": "1302147810527023164",
+    "CHANNEL_REPO_MAP_JSON": "{\"guilds\":{\"1302147810527023164\":{\"channels\":{\"1521085355015671898\":\"marcomoi395/hera-flow\",\"1503543527781437671\":\"marcomoi395/notion-lite-clipper\",\"1520432151948955688\":\"marcomoi395/portfolio\",\"1520434066170581062\":\"marcomoi395/discography\",\"1503544051343818842\":\"marcomoi395/word2card\",\"1521085625099358298\":\"marcomoi395/hera-flow-fe\"}}}}",
+    "OPENAI_MODEL": "gpt-5.4-nano"
+  }
 }
