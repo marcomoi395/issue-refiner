@@ -564,7 +564,7 @@ async function processComponent(interaction, env) {
       await sendMessageToChannel(pending.channelId, env, {
         embeds: [
           {
-            title: `[Issue] ${issueData.title}`,
+            title: `${issueData.title}`,
             url: issueData.html_url,
             color: 0x0b5f9b,
             author: {
