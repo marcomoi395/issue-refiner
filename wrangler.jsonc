@@ -6,8 +6,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "kv_namespaces": [
     {
-      "binding": "PENDING_ISSUES",
-      "id": "<KV_NAMESPACE_ID>",
+      "binding": "KV",
+      "id": "48a76ced34eb4732bb5a9477e43dc3db",
     },
   ],
   "vars": {
