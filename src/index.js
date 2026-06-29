@@ -349,7 +349,7 @@ Rules:
     };
 
     // Store in KV with TTL 300 seconds
-    await env.PENDING_ISSUES.put(`pending:${interaction.id}`, JSON.stringify(pendingData), { expirationTtl: 300 });
+    await env.KV.put(`pending:${interaction.id}`, JSON.stringify(pendingData), { expirationTtl: 300 });
 
     const content = `**Repo:** ${repo}\n**Title:** ${parsed.title}\n**Labels:** ${finalLabels.join(', ')}\n\n${parsed.body}`;
 
@@ -379,7 +379,7 @@ async function processComponent(interaction, env) {
   const userId = getUserId(interaction);
   const [action, targetId] = customId.split(':');
 
-  const pendingStr = await env.PENDING_ISSUES.get(`pending:${targetId}`);
+  const pendingStr = await env.KV.get(`pending:${targetId}`);
   if (!pendingStr) {
     await editOriginalInteraction(interaction.application_id, interaction.token, {
       content: 'Preview đã hết hạn hoặc đã được xử lý.',
@@ -400,7 +400,7 @@ async function processComponent(interaction, env) {
   }
 
   if (action === 'issue_cancel') {
-    await env.PENDING_ISSUES.delete(`pending:${targetId}`);
+    await env.KV.delete(`pending:${targetId}`);
     await editOriginalInteraction(interaction.application_id, interaction.token, {
       content: 'Đã hủy tạo issue.',
       components: []
@@ -439,7 +439,7 @@ async function processComponent(interaction, env) {
         throw new Error('GitHub response missing html_url');
       }
 
-      await env.PENDING_ISSUES.delete(`pending:${targetId}`);
+      await env.KV.delete(`pending:${targetId}`);
 
             await editOriginalInteraction(interaction.application_id, interaction.token, {
               content: `Đã tạo issue: ${issueData.html_url}`,
@@ -501,7 +501,7 @@ async function processComponent(interaction, env) {
     } catch (err) {
       console.error('GitHub issue creation failed', err);
       // Clean up KV on terminal failures as specified
-      await env.PENDING_ISSUES.delete(`pending:${targetId}`).catch(e => console.error('Failed to delete pending KV key', e));
+      await env.KV.delete(`pending:${targetId}`).catch(e => console.error('Failed to delete pending KV key', e));
 
       await editOriginalInteraction(interaction.application_id, interaction.token, {
         content: 'Không thể tạo issue cho repo này. Hãy kiểm tra quyền PAT, repo hoặc Issues setting.',
